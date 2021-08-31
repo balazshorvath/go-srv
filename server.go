@@ -31,6 +31,10 @@ type BasicServer struct {
 	Group *errgroup.Group
 }
 
+func (b *BasicServer) Init() {
+	// Empty implementation. Not all servers need this one.
+}
+
 // CreateAndRunServer creates, initializes and starts a Server.
 // Also makes sure that all the subroutines are finished before exiting.
 func CreateAndRunServer(constructor Constructor, gracefulTimeout time.Duration) error {
