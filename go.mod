@@ -1,4 +1,4 @@
-module github.com/balazshorvath/go-srv
+module github.com/balazshorvath/go-srv/v2
 
 go 1.13
 
