@@ -1,20 +1,21 @@
 # go-srv
 Interface for implementing servers in go with graceful shutdown on OS signals.
 
-## Example server implementation
-gin-gonic/zerolog/gorm
+## Example server implementations
+
+### gin-gonic/zerolog/gorm
 ```go
 import (
 	"context"
 	"fmt"
 	"net/http"
 	"os"
-	"sync"
 
 	"github.com/gin-gonic/gin"
 	"github.com/jinzhu/gorm"
 	"github.com/rs/zerolog"
 
+	"golang.org/x/sync/errgroup"
 	server "github.com/balazshorvath/go-srv"
 )
 
@@ -28,7 +29,7 @@ type httpServer struct {
 	db     *gorm.DB
 }
 
-func New(ctx context.Context, group *sync.WaitGroup) server.Server {
+func New(ctx context.Context, group *errgroup.Group) server.Server {
 	path := os.Getenv("CONFIG_PATH")
 	if path == "" {
 		path = defaultConfig

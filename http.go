@@ -15,12 +15,11 @@ type BasicHttpServer struct {
 
 func (b *BasicHttpServer) Start() {
 	// Server routine
-	go func() {
-		b.Group.Add(1)
-		defer b.Group.Done()
-		// Start
-		_ = b.Srv.ListenAndServe()
-	}()
+	b.Group.Go(
+		func() error {
+			return b.Srv.ListenAndServe()
+		},
+	)
 }
 
 func (b *BasicHttpServer) Shutdown(ctx context.Context) error {

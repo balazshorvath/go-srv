@@ -5,17 +5,19 @@ import (
 	"fmt"
 	"os"
 	"os/signal"
-	"sync"
 	"syscall"
 	"time"
+
+	"golang.org/x/sync/errgroup"
 )
 
-type Constructor func(ctx context.Context, group *sync.WaitGroup) Server
+type Constructor func(ctx context.Context, group *errgroup.Group) Server
 
 // Server is an interface for implementing concurrent servers.
 // CreateAndRunServer() implements a graceful shutdown waiting for all the resources to close.
 //  It calls Init() and Start() on the server.
 //
+// Use BasicServer.Group to start goroutines
 // When implementing an http server, use BasicHttpServer struct.
 //
 type Server interface {
@@ -26,17 +28,17 @@ type Server interface {
 
 type BasicServer struct {
 	Ctx   context.Context
-	Group *sync.WaitGroup
+	Group *errgroup.Group
 }
 
 // CreateAndRunServer creates, initializes and starts a Server.
 // Also makes sure that all the subroutines are finished before exiting.
-func CreateAndRunServer(constructor Constructor, gracefulTimeout time.Duration) {
-	// Used to track goroutines
-	group := &sync.WaitGroup{}
+func CreateAndRunServer(constructor Constructor, gracefulTimeout time.Duration) error {
 	// Server cancellation
 	serverContext, serverCancel := context.WithCancel(context.Background())
-	s := constructor(serverContext, group)
+	group, ctx := errgroup.WithContext(serverContext)
+	// Used to track goroutines
+	s := constructor(ctx, group)
 	s.Init()
 	s.Start()
 	// Stop main thread until we want to shut down
@@ -59,5 +61,5 @@ func CreateAndRunServer(constructor Constructor, gracefulTimeout time.Duration) 
 		done <- struct{}{}
 	}()
 	<-done
-	group.Wait()
+	return group.Wait()
 }
