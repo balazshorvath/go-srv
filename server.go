@@ -2,6 +2,7 @@ package server
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"os"
 	"os/signal"
@@ -12,6 +13,8 @@ import (
 )
 
 type Constructor func(ctx context.Context, group *errgroup.Group) Server
+
+var OsExitError = errors.New("os exit signal")
 
 // Server is an interface for implementing concurrent servers.
 // CreateAndRunServer() implements a graceful shutdown waiting for all the resources to close.
@@ -37,7 +40,7 @@ func (b *BasicServer) Init() {
 
 // CreateAndRunServer creates, initializes and starts a Server.
 // Also makes sure that all the subroutines are finished before exiting.
-func CreateAndRunServer(constructor Constructor, gracefulTimeout time.Duration) error {
+func CreateAndRunServer(constructor Constructor, gracefulTimeout time.Duration) (err error) {
 	// Server cancellation
 	serverContext, serverCancel := context.WithCancel(context.Background())
 	group, ctx := errgroup.WithContext(serverContext)
@@ -58,6 +61,7 @@ func CreateAndRunServer(constructor Constructor, gracefulTimeout time.Duration) 
 			fmt.Println("Context closed")
 		case sig := <-osSig:
 			fmt.Printf("Received OS signal: %v\n", sig)
+			err = OsExitError
 		}
 		// Cancel the server context (initiate shutdown)
 		// Give the server some time to close resources
@@ -70,5 +74,9 @@ func CreateAndRunServer(constructor Constructor, gracefulTimeout time.Duration) 
 		done <- struct{}{}
 	}()
 	<-done
+	if err != nil {
+		_ = group.Wait()
+		return err
+	}
 	return group.Wait()
 }
