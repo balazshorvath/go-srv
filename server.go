@@ -53,7 +53,12 @@ func CreateAndRunServer(constructor Constructor, gracefulTimeout time.Duration) 
 		osSig := make(chan os.Signal)
 		signal.Notify(osSig, syscall.SIGINT, syscall.SIGTERM)
 		// Wait for input
-		<-osSig
+		select {
+		case <-serverContext.Done():
+			fmt.Println("Context closed")
+		case sig := <-osSig:
+			fmt.Printf("Received OS signal: %v\n", sig)
+		}
 		// Cancel the server context (initiate shutdown)
 		// Give the server some time to close resources
 		serverCancel()
