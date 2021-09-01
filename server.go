@@ -57,7 +57,7 @@ func CreateAndRunServer(constructor Constructor, gracefulTimeout time.Duration) 
 		signal.Notify(osSig, syscall.SIGINT, syscall.SIGTERM)
 		// Wait for input
 		select {
-		case <-serverContext.Done():
+		case <-ctx.Done():
 			fmt.Println("Context closed")
 		case sig := <-osSig:
 			fmt.Printf("Received OS signal: %v\n", sig)
